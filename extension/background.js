@@ -94,8 +94,17 @@ chrome.tabs.onUpdated.addListener(() => {
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg.type !== 'fetchSuggest') return false;
+
+  const isBaidu = msg.url.includes('suggestion.baidu.com');
+
   fetch(msg.url)
-    .then(r => r.text())
+    .then(r => {
+      if (isBaidu) {
+        // Baidu returns GBK-encoded text; decoding as UTF-8 produces garbled Chinese
+        return r.arrayBuffer().then(buf => new TextDecoder('gbk').decode(buf));
+      }
+      return r.text();
+    })
     .then(text => {
       try { sendResponse({ ok: true, data: JSON.parse(text) }); }
       catch { sendResponse({ ok: false }); }
