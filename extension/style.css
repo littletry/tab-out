@@ -1159,6 +1159,267 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 
 
 /* ================================================================
+   SHORTCUTS — Chrome-style editable top-site shortcuts grid
+   ================================================================ */
+
+.shortcuts-section {
+  margin-bottom: 32px;
+}
+
+.shortcuts-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-start;
+}
+
+.shortcut-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 96px;
+  padding: 12px 4px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  text-decoration: none;
+  position: relative;
+  transition: background 0.15s;
+}
+
+.shortcut-item:hover {
+  background: rgba(154, 145, 138, 0.08);
+}
+
+.shortcut-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--warm-gray);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.shortcut-icon img {
+  width: 24px;
+  height: 24px;
+  border-radius: 2px;
+}
+
+.shortcut-icon svg {
+  width: 20px;
+  height: 20px;
+  color: var(--muted);
+}
+
+.shortcut-label {
+  font-size: 12px;
+  color: var(--ink);
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+  line-height: 1.3;
+}
+
+/* "Add shortcut" button */
+.shortcut-item.shortcut-add .shortcut-icon {
+  border: 2px dashed var(--warm-gray);
+  background: transparent;
+}
+
+.shortcut-item.shortcut-add .shortcut-label {
+  color: var(--muted);
+}
+
+/* Context menu (edit/remove) — appears on right-click or via edit icon */
+.shortcut-edit-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: var(--card-bg);
+  color: var(--muted);
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 4px var(--shadow);
+  padding: 0;
+  transition: color 0.15s;
+}
+
+.shortcut-edit-btn svg {
+  width: 12px;
+  height: 12px;
+}
+
+.shortcut-item:hover .shortcut-edit-btn {
+  display: flex;
+}
+
+.shortcut-edit-btn:hover {
+  color: var(--ink);
+}
+
+
+/* ---- Shortcut edit modal ---- */
+.shortcut-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: modalFadeIn 0.15s ease;
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.shortcut-modal {
+  background: var(--card-bg);
+  border: 1px solid var(--warm-gray);
+  border-radius: 12px;
+  padding: 24px;
+  width: 360px;
+  max-width: calc(100vw - 32px);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.15);
+  animation: modalSlideUp 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalSlideUp {
+  from { transform: translateY(12px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.shortcut-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  font-family: 'Newsreader', serif;
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--ink);
+}
+
+.shortcut-modal-close {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.shortcut-modal-close svg {
+  width: 16px;
+  height: 16px;
+}
+
+.shortcut-modal-close:hover {
+  background: rgba(154, 145, 138, 0.1);
+  color: var(--ink);
+}
+
+.shortcut-modal-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.shortcut-modal-input {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--warm-gray);
+  border-radius: 8px;
+  background: var(--paper);
+  color: var(--ink);
+  outline: none;
+  transition: border-color 0.2s;
+  margin-bottom: 16px;
+}
+
+.shortcut-modal-input:focus {
+  border-color: var(--accent-amber);
+}
+
+.shortcut-modal-input::placeholder {
+  color: var(--muted);
+}
+
+.shortcut-modal-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.shortcut-modal-btn {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 20px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.shortcut-modal-btn.primary {
+  background: var(--accent-amber);
+  color: white;
+}
+
+.shortcut-modal-btn.primary:hover {
+  opacity: 0.85;
+}
+
+.shortcut-modal-btn.secondary {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--warm-gray);
+}
+
+.shortcut-modal-btn.secondary:hover {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+
+#shortcutDeleteBtn {
+  color: var(--status-abandoned);
+  border-color: rgba(179, 90, 90, 0.3);
+}
+
+#shortcutDeleteBtn:hover {
+  border-color: var(--status-abandoned);
+}
+
+
+/* ================================================================
    DARK THEME
    Activated by setting data-theme="dark" on <html>.
    Overrides CSS custom properties and hardcoded rgba() values
@@ -1304,6 +1565,22 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 
 [data-theme="dark"] .chip-favicon {
   filter: brightness(0.9);
+}
+
+[data-theme="dark"] .shortcut-item:hover {
+  background: rgba(138, 133, 128, 0.1);
+}
+
+[data-theme="dark"] .shortcut-modal-overlay {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+[data-theme="dark"] .shortcut-modal {
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] #shortcutDeleteBtn {
+  border-color: rgba(199, 106, 106, 0.35);
 }
 
 
