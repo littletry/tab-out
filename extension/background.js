@@ -87,6 +87,23 @@ chrome.tabs.onUpdated.addListener(() => {
   updateBadge();
 });
 
+// ─── Message handler for search suggestions ──────────────────────────────────
+// The new-tab page can't fetch cross-origin suggest APIs directly (CORS).
+// It sends { type: 'fetchSuggest', url } here; the service worker fetches
+// on its behalf (host_permissions bypass CORS) and returns the JSON result.
+
+chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+  if (msg.type !== 'fetchSuggest') return false;
+  fetch(msg.url)
+    .then(r => r.text())
+    .then(text => {
+      try { sendResponse({ ok: true, data: JSON.parse(text) }); }
+      catch { sendResponse({ ok: false }); }
+    })
+    .catch(() => sendResponse({ ok: false }));
+  return true;
+});
+
 // ─── Initial run ─────────────────────────────────────────────────────────────
 
 // Run once immediately when the service worker first loads

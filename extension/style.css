@@ -1296,6 +1296,54 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
   opacity: 0.85;
 }
 
+/* ---- Autocomplete suggestions dropdown ---- */
+.search-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  background: var(--card-bg);
+  border: 1px solid var(--warm-gray);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px var(--shadow);
+  z-index: 50;
+  padding: 4px 0;
+  overflow: hidden;
+}
+
+.search-suggestion-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 16px;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  color: var(--ink);
+  transition: background 0.1s;
+}
+
+.search-suggestion-item:hover,
+.search-suggestion-item.active {
+  background: rgba(154, 145, 138, 0.08);
+}
+
+.search-suggestion-item svg {
+  width: 14px;
+  height: 14px;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.search-suggestion-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 
 /* ================================================================
    SHORTCUTS — Chrome-style editable top-site shortcuts grid
@@ -1716,6 +1764,11 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 
 [data-theme="dark"] .search-engine-option:hover {
   background: rgba(138, 133, 128, 0.12);
+}
+
+[data-theme="dark"] .search-suggestion-item:hover,
+[data-theme="dark"] .search-suggestion-item.active {
+  background: rgba(138, 133, 128, 0.1);
 }
 
 [data-theme="dark"] .shortcut-item:hover {
