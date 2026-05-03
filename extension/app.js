@@ -1752,8 +1752,76 @@ document.addEventListener('keydown', (e) => {
 
 
 /* ----------------------------------------------------------------
+   SEARCH BAR — engine switching + persistence
+   ---------------------------------------------------------------- */
+
+const SEARCH_ENGINES = {
+  google: { name: 'Google', action: 'https://www.google.com/search', param: 'q', icon: 'https://www.google.com/favicon.ico', placeholder: 'Search Google or type a URL' },
+  bing:   { name: 'Bing',   action: 'https://www.bing.com/search',  param: 'q', icon: 'https://www.bing.com/favicon.ico',   placeholder: 'Search Bing or type a URL' },
+  baidu:  { name: 'Baidu',  action: 'https://www.baidu.com/s',      param: 'wd', icon: 'https://www.baidu.com/favicon.ico', placeholder: 'Search Baidu or type a URL' },
+};
+const SEARCH_ENGINE_KEY = 'searchEngine';
+
+function applySearchEngine(engineId) {
+  const engine = SEARCH_ENGINES[engineId] || SEARCH_ENGINES.google;
+  const form = document.getElementById('searchBar');
+  const logo = document.getElementById('searchEngineLogo');
+  const input = document.getElementById('searchInput');
+  if (form) {
+    form.action = engine.action;
+    input.name = engine.param;
+  }
+  if (logo) {
+    logo.src = engine.icon;
+    logo.alt = engine.name;
+  }
+  if (input) input.placeholder = engine.placeholder;
+}
+
+async function loadSearchEngine() {
+  try {
+    const result = await chrome.storage.local.get(SEARCH_ENGINE_KEY);
+    const engineId = result[SEARCH_ENGINE_KEY] || 'google';
+    applySearchEngine(engineId);
+    return engineId;
+  } catch {
+    applySearchEngine('google');
+    return 'google';
+  }
+}
+
+async function setSearchEngine(engineId) {
+  applySearchEngine(engineId);
+  try {
+    await chrome.storage.local.set({ [SEARCH_ENGINE_KEY]: engineId });
+  } catch { /* silent */ }
+}
+
+document.addEventListener('click', (e) => {
+  const menu = document.getElementById('searchEngineMenu');
+
+  if (e.target.closest('#searchEngineBtn')) {
+    if (menu) menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+    return;
+  }
+
+  const option = e.target.closest('.search-engine-option');
+  if (option) {
+    const engineId = option.dataset.engine;
+    if (engineId) setSearchEngine(engineId);
+    if (menu) menu.style.display = 'none';
+    return;
+  }
+
+  if (menu && menu.style.display !== 'none' && !e.target.closest('.search-engine-menu')) {
+    menu.style.display = 'none';
+  }
+});
+
+
+/* ----------------------------------------------------------------
    INITIALIZE
    ---------------------------------------------------------------- */
 loadTheme().then(async () => {
-  await Promise.all([renderDashboard(), initShortcuts()]);
+  await Promise.all([renderDashboard(), initShortcuts(), loadSearchEngine()]);
 });

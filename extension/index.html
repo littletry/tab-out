@@ -45,6 +45,33 @@
   </header>
 
   <!-- ================================================================
+       SEARCH BAR — Google / Bing / Baidu switchable search
+       ================================================================ -->
+  <div class="search-bar-section">
+    <form class="search-bar" id="searchBar" action="https://www.google.com/search" method="get" target="_top">
+      <button type="button" class="search-engine-btn" id="searchEngineBtn" title="Switch search engine">
+        <img class="search-engine-logo" id="searchEngineLogo" src="https://www.google.com/favicon.ico" alt="Google" width="18" height="18">
+        <svg class="search-engine-chevron" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
+      </button>
+      <div class="search-engine-menu" id="searchEngineMenu" style="display:none">
+        <button type="button" class="search-engine-option" data-engine="google">
+          <img src="https://www.google.com/favicon.ico" alt="" width="16" height="16">Google
+        </button>
+        <button type="button" class="search-engine-option" data-engine="bing">
+          <img src="https://www.bing.com/favicon.ico" alt="" width="16" height="16">Bing
+        </button>
+        <button type="button" class="search-engine-option" data-engine="baidu">
+          <img src="https://www.baidu.com/favicon.ico" alt="" width="16" height="16">Baidu
+        </button>
+      </div>
+      <input type="text" class="search-input" id="searchInput" name="q" placeholder="Search Google or type a URL" autocomplete="off">
+      <button type="submit" class="search-submit" title="Search">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg>
+      </button>
+    </form>
+  </div>
+
+  <!-- ================================================================
        SHORTCUTS — editable grid of frequently visited sites,
        similar to Chrome's default new tab page shortcuts
        ================================================================ -->

@@ -1159,6 +1159,145 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 
 
 /* ================================================================
+   SEARCH BAR — Google / Bing / Baidu switchable
+   ================================================================ */
+
+.search-bar-section {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.search-bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  max-width: 560px;
+  background: var(--card-bg);
+  border: 1px solid var(--warm-gray);
+  border-radius: 24px;
+  padding: 4px 6px;
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+.search-bar:focus-within {
+  border-color: var(--accent-amber);
+  box-shadow: 0 2px 12px var(--shadow), 0 0 0 3px rgba(200, 113, 58, 0.08);
+}
+
+.search-engine-btn {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 16px;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+
+.search-engine-btn:hover {
+  background: rgba(154, 145, 138, 0.08);
+}
+
+.search-engine-logo {
+  width: 18px;
+  height: 18px;
+  border-radius: 2px;
+}
+
+.search-engine-chevron {
+  width: 12px;
+  height: 12px;
+  color: var(--muted);
+}
+
+.search-engine-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 4px;
+  background: var(--card-bg);
+  border: 1px solid var(--warm-gray);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px var(--shadow);
+  padding: 4px;
+  z-index: 50;
+  min-width: 140px;
+  animation: modalFadeIn 0.1s ease;
+}
+
+.search-engine-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  color: var(--ink);
+  transition: background 0.12s;
+  text-align: left;
+}
+
+.search-engine-option img {
+  width: 16px;
+  height: 16px;
+  border-radius: 2px;
+}
+
+.search-engine-option:hover {
+  background: rgba(154, 145, 138, 0.08);
+}
+
+.search-input {
+  flex: 1;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  border: none;
+  background: transparent;
+  color: var(--ink);
+  outline: none;
+  padding: 8px 8px;
+  min-width: 0;
+}
+
+.search-input::placeholder {
+  color: var(--muted);
+}
+
+.search-submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  background: var(--accent-amber);
+  color: white;
+  border-radius: 50%;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: opacity 0.15s;
+}
+
+.search-submit svg {
+  width: 16px;
+  height: 16px;
+}
+
+.search-submit:hover {
+  opacity: 0.85;
+}
+
+
+/* ================================================================
    SHORTCUTS — Chrome-style editable top-site shortcuts grid
    ================================================================ */
 
@@ -1565,6 +1704,18 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 
 [data-theme="dark"] .chip-favicon {
   filter: brightness(0.9);
+}
+
+[data-theme="dark"] .search-bar:focus-within {
+  box-shadow: 0 2px 12px var(--shadow), 0 0 0 3px rgba(212, 136, 74, 0.1);
+}
+
+[data-theme="dark"] .search-engine-btn:hover {
+  background: rgba(138, 133, 128, 0.12);
+}
+
+[data-theme="dark"] .search-engine-option:hover {
+  background: rgba(138, 133, 128, 0.12);
 }
 
 [data-theme="dark"] .shortcut-item:hover {
