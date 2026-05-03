@@ -1902,10 +1902,10 @@ document.addEventListener('click', (e) => {
   const suggestion = e.target.closest('.search-suggestion-item');
   if (suggestion) {
     const text = suggestion.dataset.suggestionText;
-    const input = document.getElementById('searchInput');
-    if (input) input.value = text;
     hideSuggestions();
-    document.getElementById('searchBar').submit();
+    const engine = SEARCH_ENGINES[currentEngineId] || SEARCH_ENGINES.google;
+    const searchUrl = engine.action + '?' + engine.param + '=' + encodeURIComponent(text);
+    window.open(searchUrl, '_blank');
     return;
   }
 
