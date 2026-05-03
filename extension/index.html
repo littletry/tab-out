@@ -173,11 +173,9 @@
   </div>
 </div>
 
-<!-- Personal config (gitignored) — defines LOCAL_LANDING_PAGE_PATTERNS etc. -->
-<!-- If the file doesn't exist, that's fine — app.js uses sensible defaults. -->
-<script src="config.local.js" onerror="/* no personal config, that's fine */"></script>
-
-<!-- Main dashboard logic — loads last so the DOM is ready -->
+<!-- Main dashboard logic — loads last so the DOM is ready.
+     config.local.js (personal overrides, gitignored) is loaded dynamically
+     inside app.js so a missing file doesn't trigger a console error. -->
 <script src="app.js"></script>
 </body>
 </html>
