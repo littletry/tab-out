@@ -200,9 +200,16 @@
   </div>
 </div>
 
-<!-- Main dashboard logic — loads last so the DOM is ready.
+<!-- Module scripts — loaded in dependency order so globals are available.
      config.local.js (personal overrides, gitignored) is loaded dynamically
      inside app.js so a missing file doesn't trigger a console error. -->
+<script src="theme.js"></script>
+<script src="helpers.js"></script>
+<script src="tabs.js"></script>
+<script src="deferred.js"></script>
+<script src="shortcuts.js"></script>
+<script src="dashboard.js"></script>
+<script src="search.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
