@@ -98,24 +98,14 @@
   </div>
 
   <!-- ================================================================
-       MAIN CONTENT AREA — two-column layout
-       Left: open tabs (domain/mission cards)
-       Right: saved for later checklist
-       The right column only renders when it has items (JS controls this)
+       MAIN CONTENT AREA — three-column layout
+       Left: saved for later checklist
+       Center: open tabs (domain/mission cards)
+       Right: utility panels (recently closed, stats, timer, notes)
        ================================================================ -->
   <div class="dashboard-columns" id="dashboardColumns">
 
-    <!-- LEFT COLUMN: Open tabs -->
-    <div class="active-section" id="openTabsSection" style="display:none">
-      <div class="section-header">
-        <h2 id="openTabsSectionTitle">Right now</h2>
-        <div class="section-line"></div>
-        <div class="section-count" id="openTabsSectionCount"></div>
-      </div>
-      <div class="missions" id="openTabsMissions"></div>
-    </div>
-
-    <!-- RIGHT COLUMN: Saved for Later checklist -->
+    <!-- LEFT COLUMN: Saved for Later checklist -->
     <div class="deferred-column" id="deferredColumn" style="display:none">
       <div class="section-header">
         <h2>Saved for later</h2>
@@ -123,15 +113,12 @@
         <div class="section-count" id="deferredCount"></div>
       </div>
 
-      <!-- Active checklist items — injected by renderDeferredList() in app.js -->
       <div class="deferred-list" id="deferredList"></div>
 
-      <!-- Empty state — shown when no active deferred tabs -->
       <div class="deferred-empty" id="deferredEmpty" style="display:none">
         Nothing saved. Living in the moment.
       </div>
 
-      <!-- Archive section — collapsed by default -->
       <div class="deferred-archive" id="deferredArchive" style="display:none">
         <button class="archive-toggle" id="archiveToggle">
           <svg class="archive-chevron" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
@@ -143,6 +130,53 @@
           <div class="archive-list" id="archiveList"></div>
         </div>
       </div>
+    </div>
+
+    <!-- CENTER COLUMN: Open tabs -->
+    <div class="active-section" id="openTabsSection" style="display:none">
+      <div class="section-header">
+        <h2 id="openTabsSectionTitle">Right now</h2>
+        <div class="section-line"></div>
+        <div class="section-count" id="openTabsSectionCount"></div>
+      </div>
+      <div class="missions" id="openTabsMissions"></div>
+    </div>
+
+    <!-- RIGHT COLUMN: Utility panels -->
+    <div class="utility-column" id="utilityColumn">
+
+      <div class="panel" id="recentlyClosedPanel">
+        <div class="panel-header">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+          Recently Closed
+        </div>
+        <div class="recently-closed-list" id="recentlyClosedList"></div>
+      </div>
+
+      <div class="panel" id="tabStatsPanel">
+        <div class="panel-header">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" /></svg>
+          Tab Stats
+        </div>
+        <div id="tabStatsContent"></div>
+      </div>
+
+      <div class="panel" id="focusTimerPanel">
+        <div class="panel-header">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+          Focus Timer
+        </div>
+        <div id="focusTimerContent"></div>
+      </div>
+
+      <div class="panel" id="quickNotesPanel">
+        <div class="panel-header">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" /></svg>
+          Quick Notes
+        </div>
+        <div id="quickNotesContent"></div>
+      </div>
+
     </div>
 
   </div><!-- end .dashboard-columns -->
@@ -209,6 +243,7 @@
 <script src="deferred.js"></script>
 <script src="shortcuts.js"></script>
 <script src="dashboard.js"></script>
+<script src="panels.js"></script>
 <script src="search.js"></script>
 <script src="app.js"></script>
 </body>

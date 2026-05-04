@@ -422,6 +422,9 @@ async function renderStaticDashboard() {
 
   // --- Render "Saved for Later" column ---
   await renderDeferredColumn();
+
+  // --- Render utility panels (right sidebar) ---
+  if (typeof renderPanels === 'function') await renderPanels();
 }
 
 async function renderDashboard() {
