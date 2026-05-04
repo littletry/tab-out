@@ -277,7 +277,10 @@ async function renderStaticDashboard() {
   const greetingEl = document.getElementById('greeting');
   const dateEl     = document.getElementById('dateDisplay');
   if (greetingEl) greetingEl.textContent = getGreeting();
-  if (dateEl)     dateEl.textContent     = getDateDisplay();
+  if (dateEl && !dateEl._clockStarted) {
+    startClock(dateEl);
+    dateEl._clockStarted = true;
+  }
 
   // --- Fetch tabs ---
   await fetchOpenTabs();

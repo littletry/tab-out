@@ -229,6 +229,31 @@ function getDateDisplay() {
   });
 }
 
+/**
+ * getTimeDisplay() — "14:08:35" (24-hour, zero-padded, seconds)
+ */
+function getTimeDisplay() {
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2, '0');
+  const mm = String(now.getMinutes()).padStart(2, '0');
+  const ss = String(now.getSeconds()).padStart(2, '0');
+  return `${hh}:${mm}:${ss}`;
+}
+
+/**
+ * startClock(dateEl)
+ *
+ * Updates the date display element every second with date + time.
+ */
+function startClock(dateEl) {
+  if (!dateEl) return;
+  function tick() {
+    dateEl.textContent = getDateDisplay() + '  ' + getTimeDisplay();
+  }
+  tick();
+  setInterval(tick, 1000);
+}
+
 
 /* ----------------------------------------------------------------
    DOMAIN & TITLE CLEANUP HELPERS
