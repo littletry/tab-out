@@ -8,6 +8,8 @@ Tab Out 是一个 Chrome 扩展，用一个清爽的仪表盘替换你的新标�
 
 无需服务器、无需账号、无需任何外部请求。纯本地 Chrome 扩展。
 
+> **Fork 说明：** 本仓库基于 [zarazhangrui/tab-out](https://github.com/zarazhangrui/tab-out.git) 增加功能开发。
+
 ---
 
 ## 使用 AI 编程助手安装

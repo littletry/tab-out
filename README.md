@@ -8,6 +8,8 @@ Tab Out is a Chrome extension that replaces your new tab page with a dashboard o
 
 No server. No account. No external API calls. Just a Chrome extension.
 
+> **Fork notice:** This repo is based on [zarazhangrui/tab-out](https://github.com/zarazhangrui/tab-out.git) with additional features.
+
 ---
 
 ## Install with a coding agent
