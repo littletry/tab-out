@@ -15,7 +15,7 @@ Tab Out 是一个 Chrome 扩展，用一个清爽的仪表盘替换你的新标�
 把这个仓库链接发给你的 AI 编程助手（Claude Code、Codex 等），说 **"帮我安装这个"**：
 
 ```
-https://github.com/zarazhangrui/tab-out
+https://github.com/littletry/tab-out
 ```
 
 助手会引导你完成安装，大约 1 分钟。
@@ -75,7 +75,7 @@ https://github.com/zarazhangrui/tab-out
 **1. 克隆仓库**
 
 ```bash
-git clone https://github.com/zarazhangrui/tab-out.git
+git clone https://github.com/littletry/tab-out.git
 ```
 
 **2. 加载 Chrome 扩展**
