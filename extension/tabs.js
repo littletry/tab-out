@@ -39,6 +39,32 @@ async function fetchOpenTabs() {
 }
 
 /**
+ * closeAllRealTabs()
+ *
+ * Closes every real web tab (exact tab IDs from getRealTabs).
+ * Used by the header "close all" action so duplicate URLs / same-host
+ * tabs are all closed reliably.
+ */
+async function closeAllRealTabs() {
+  await fetchOpenTabs();
+  const ids = getRealTabs().map(t => t.id).filter(id => id != null);
+  if (ids.length > 0) await chrome.tabs.remove(ids);
+  await fetchOpenTabs();
+}
+
+/**
+ * closeTabsByIds(tabs)
+ *
+ * Closes tabs by their Chrome tab IDs. Each item needs an `id` field.
+ */
+async function closeTabsByIds(tabs) {
+  const ids = (tabs || []).map(t => t.id).filter(id => id != null);
+  if (ids.length === 0) return;
+  await chrome.tabs.remove(ids);
+  await fetchOpenTabs();
+}
+
+/**
  * closeTabsByUrls(urls)
  *
  * Closes all open tabs whose hostname matches any of the given URLs.
@@ -206,6 +232,25 @@ function getRealTabs() {
 }
 
 /**
+ * getRealTabCount()
+ *
+ * Count of real web pages — matches toolbar badge and Tab Stats.
+ */
+function getRealTabCount() {
+  return getRealTabs().length;
+}
+
+/**
+ * updateFooterTabCount()
+ *
+ * Syncs the footer stat with getRealTabCount().
+ */
+function updateFooterTabCount() {
+  const statTabs = document.getElementById('statTabs');
+  if (statTabs) statTabs.textContent = getRealTabCount();
+}
+
+/**
  * checkTabOutDupes()
  *
  * Counts how many Tab Out pages are open. If more than 1,
@@ -214,13 +259,95 @@ function getRealTabs() {
 function checkTabOutDupes() {
   const tabOutTabs = openTabs.filter(t => t.isTabOut);
   const banner  = document.getElementById('tabOutDupeBanner');
-  const countEl = document.getElementById('tabOutDupeCount');
   if (!banner) return;
 
   if (tabOutTabs.length > 1) {
-    if (countEl) countEl.textContent = tabOutTabs.length;
+    const textEl = document.getElementById('tabOutDupeText');
+    if (textEl) textEl.textContent = t('dupeBanner.message', { count: tabOutTabs.length });
     banner.style.display = 'flex';
   } else {
     banner.style.display = 'none';
   }
+}
+
+
+/* ----------------------------------------------------------------
+   LIVE SYNC — refresh tab views when tabs change elsewhere
+   ---------------------------------------------------------------- */
+
+let tabSyncTimer = null;
+let tabSyncInFlight = false;
+let tabSyncPending = false;
+let lastRealTabsSnapshot = '';
+let tabSyncReadyAt = 0;
+const TAB_SYNC_DEBOUNCE_MS = 300;
+const TAB_SYNC_WARMUP_MS = 1200;
+
+function buildRealTabsSnapshot() {
+  return getRealTabs()
+    .map(t => `${t.id}:${t.url}`)
+    .sort()
+    .join('|');
+}
+
+function syncRealTabsSnapshot() {
+  lastRealTabsSnapshot = buildRealTabsSnapshot();
+}
+
+function scheduleTabSyncRefresh() {
+  if (Date.now() - tabSyncReadyAt < TAB_SYNC_WARMUP_MS) return;
+
+  clearTimeout(tabSyncTimer);
+  tabSyncTimer = setTimeout(runTabSyncRefresh, TAB_SYNC_DEBOUNCE_MS);
+}
+
+async function runTabSyncRefresh() {
+  if (tabSyncInFlight) {
+    tabSyncPending = true;
+    return;
+  }
+  tabSyncInFlight = true;
+  try {
+    await fetchOpenTabs();
+    const snapshot = buildRealTabsSnapshot();
+    if (snapshot === lastRealTabsSnapshot) return;
+
+    lastRealTabsSnapshot = snapshot;
+    if (typeof refreshTabViews === 'function') {
+      await refreshTabViews({ skipFetch: true });
+    }
+  } finally {
+    tabSyncInFlight = false;
+    if (tabSyncPending) {
+      tabSyncPending = false;
+      scheduleTabSyncRefresh();
+    }
+  }
+}
+
+/**
+ * initTabSync()
+ *
+ * Listens for tab changes in any window and debounces a dashboard refresh.
+ * Ignores title/favicon-only updates to avoid refresh storms on page load.
+ */
+function initTabSync() {
+  if (!chrome.tabs?.onCreated) return;
+
+  tabSyncReadyAt = Date.now();
+  syncRealTabsSnapshot();
+
+  chrome.tabs.onCreated.addListener(() => scheduleTabSyncRefresh());
+  chrome.tabs.onRemoved.addListener(() => scheduleTabSyncRefresh());
+  chrome.tabs.onMoved.addListener(() => scheduleTabSyncRefresh());
+  if (chrome.tabs.onAttached) chrome.tabs.onAttached.addListener(() => scheduleTabSyncRefresh());
+  if (chrome.tabs.onDetached) chrome.tabs.onDetached.addListener(() => scheduleTabSyncRefresh());
+
+  chrome.tabs.onUpdated.addListener((_tabId, changeInfo) => {
+    if (changeInfo.url) scheduleTabSyncRefresh();
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') scheduleTabSyncRefresh();
+  });
 }

@@ -1,17 +1,41 @@
 /**
  * background.js — Service Worker for Badge Updates
  *
- * Chrome's "always-on" background script for Tab Out.
- * Its only job: keep the toolbar badge showing the current open tab count.
- *
- * Since we no longer have a server, we query chrome.tabs directly.
- * The badge counts real web tabs (skipping chrome:// and extension pages).
- *
- * Color coding gives a quick at-a-glance health signal:
- *   Green  (#3d7a4a) → 1–10 tabs  (focused, manageable)
- *   Amber  (#b8892e) → 11–20 tabs (getting busy)
- *   Red    (#b35a5a) → 21+ tabs   (time to cull!)
+ * Keeps the toolbar badge in sync and purges expired archived tabs on startup.
  */
+
+importScripts('deferred.js', 'snapshots-storage.js');
+
+const AUTO_SNAPSHOT_ALARM = 'autoTabSnapshot';
+
+async function ensureAutoSnapshotAlarm() {
+  const minutes = await getAutoSnapshotIntervalMinutes();
+  if (minutes <= 0) {
+    await chrome.alarms.clear(AUTO_SNAPSHOT_ALARM);
+    return;
+  }
+  await chrome.alarms.create(AUTO_SNAPSHOT_ALARM, {
+    delayInMinutes: minutes,
+    periodInMinutes: minutes,
+  });
+}
+
+async function bootstrapAutoSnapshotIfNeeded() {
+  const minutes = await getAutoSnapshotIntervalMinutes();
+  if (minutes <= 0) return;
+  const existing = await getAutoTabSnapshot();
+  if (!existing) {
+    await saveAutoTabSnapshot();
+  }
+}
+
+async function handleAutoSnapshotIntervalChange() {
+  await ensureAutoSnapshotAlarm();
+  const minutes = await getAutoSnapshotIntervalMinutes();
+  if (minutes > 0) {
+    await saveAutoTabSnapshot();
+  }
+}
 
 // ─── Badge updater ────────────────────────────────────────────────────────────
 
@@ -64,12 +88,25 @@ async function updateBadge() {
 
 // Update badge when the extension is first installed
 chrome.runtime.onInstalled.addListener(() => {
+  ensureAutoSnapshotAlarm()
+    .then(() => bootstrapAutoSnapshotIfNeeded())
+    .catch(() => {});
   updateBadge();
+  purgeExpiredArchived();
 });
 
 // Update badge when Chrome starts up
 chrome.runtime.onStartup.addListener(() => {
+  ensureAutoSnapshotAlarm()
+    .then(() => bootstrapAutoSnapshotIfNeeded())
+    .catch(() => {});
   updateBadge();
+  purgeExpiredArchived();
+});
+
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area !== 'local' || !changes[AUTO_SNAPSHOT_INTERVAL_KEY]) return;
+  handleAutoSnapshotIntervalChange().catch(() => {});
 });
 
 // Update badge whenever a tab is opened
@@ -85,6 +122,16 @@ chrome.tabs.onRemoved.addListener(() => {
 // Update badge when a tab's URL changes (e.g. navigating to/from chrome://)
 chrome.tabs.onUpdated.addListener(() => {
   updateBadge();
+});
+
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name !== AUTO_SNAPSHOT_ALARM) return;
+  getAutoSnapshotIntervalMinutes()
+    .then((minutes) => {
+      if (minutes <= 0) return;
+      return saveAutoTabSnapshot();
+    })
+    .catch(() => {});
 });
 
 // ─── Message handler for search suggestions ──────────────────────────────────
@@ -116,4 +163,8 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 // ─── Initial run ─────────────────────────────────────────────────────────────
 
 // Run once immediately when the service worker first loads
+ensureAutoSnapshotAlarm()
+  .then(() => bootstrapAutoSnapshotIfNeeded())
+  .catch(() => {});
 updateBadge();
+purgeExpiredArchived();

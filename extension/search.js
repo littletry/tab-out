@@ -52,7 +52,7 @@ function applySearchEngine(engineId) {
     logo.src = engine.icon;
     logo.alt = engine.name;
   }
-  if (input) input.placeholder = engine.placeholder;
+  if (input) input.placeholder = t(`search.placeholder.${engineId}`);
   hideSuggestions();
 }
 
@@ -117,6 +117,63 @@ async function fetchSuggestions(query) {
     /* background unavailable */
   }
 }
+
+/**
+ * normalizeInputUrl(input)
+ *
+ * If the search box value looks like a URL, return a navigable URL string.
+ */
+function normalizeInputUrl(input) {
+  const raw = input.trim();
+  if (!raw) return null;
+
+  if (/^(https?|file):\/\//i.test(raw)) {
+    try {
+      return new URL(raw).href;
+    } catch {
+      return null;
+    }
+  }
+
+  if (/^localhost(:\d+)?(\/|\?|#|$)/i.test(raw) || /^localhost$/i.test(raw)) {
+    return `http://${raw}`;
+  }
+
+  if (/^(\d{1,3}\.){3}\d{1,3}(:\d+)?(\/|\?|#|$)/.test(raw) || /^(\d{1,3}\.){3}\d{1,3}$/.test(raw)) {
+    return `http://${raw}`;
+  }
+
+  // domain.tld[/path] — e.g. google.com, www.example.com/foo
+  if (/^[a-z0-9][a-z0-9-]*(\.[a-z0-9][a-z0-9-]*)+(\:\d+)?(\/[^\s]*)?$/i.test(raw)) {
+    return `https://${raw}`;
+  }
+
+  return null;
+}
+
+async function openInputUrl(input) {
+  const url = normalizeInputUrl(input);
+  if (!url) return false;
+
+  try {
+    await chrome.tabs.create({ url });
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) searchInput.value = '';
+    hideSuggestions();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+document.getElementById('searchBar')?.addEventListener('submit', async (e) => {
+  const input = document.getElementById('searchInput');
+  const query = input?.value ?? '';
+  if (normalizeInputUrl(query)) {
+    e.preventDefault();
+    await openInputUrl(query);
+  }
+});
 
 let suggestTimer = null;
 document.addEventListener('input', (e) => {

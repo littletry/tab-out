@@ -40,7 +40,7 @@ function renderShortcuts(shortcuts) {
     const displayTitle = s.title || domain || s.url || '';
 
     return `<a class="shortcut-item" href="${safeUrl}" title="${safeTitle}" data-shortcut-index="${i}">
-      <button class="shortcut-edit-btn" data-action="edit-shortcut" data-shortcut-index="${i}" title="Edit shortcut">
+      <button class="shortcut-edit-btn" data-action="edit-shortcut" data-shortcut-index="${i}" title="${t('shortcut.editBtn')}">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 12.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 18.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Z" /></svg>
       </button>
       <div class="shortcut-icon">
@@ -55,7 +55,7 @@ function renderShortcuts(shortcuts) {
         <div class="shortcut-icon">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
         </div>
-        <span class="shortcut-label">Add shortcut</span>
+        <span class="shortcut-label">${t('shortcut.add')}</span>
       </div>`
     : '';
 
@@ -71,12 +71,12 @@ function openShortcutModal(index, shortcuts) {
   const deleteBtn = document.getElementById('shortcutDeleteBtn');
 
   if (index >= 0 && index < shortcuts.length) {
-    titleEl.textContent = 'Edit shortcut';
+    titleEl.textContent = t('shortcut.editTitle');
     nameInput.value = shortcuts[index].title || '';
     urlInput.value = shortcuts[index].url || '';
     deleteBtn.style.display = 'inline-flex';
   } else {
-    titleEl.textContent = 'Add shortcut';
+    titleEl.textContent = t('shortcut.addTitle');
     nameInput.value = '';
     urlInput.value = '';
     deleteBtn.style.display = 'none';

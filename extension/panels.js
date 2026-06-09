@@ -12,19 +12,113 @@
    with a one-click restore button.
    ---------------------------------------------------------------- */
 
+const RECENTLY_CLOSED_HIDDEN_KEY = 'recentlyClosedHiddenKeys';
+const RECENTLY_CLOSED_FETCH_MAX = 25;
+let recentClearConfirmTimer = null;
+
+function recentlyClosedSessionKey(tab) {
+  if (tab.sessionId) return `id:${tab.sessionId}`;
+  return `url:${tab.url || ''}`;
+}
+
+async function getHiddenRecentlyClosedKeys() {
+  try {
+    const result = await chrome.storage.local.get(RECENTLY_CLOSED_HIDDEN_KEY);
+    return result[RECENTLY_CLOSED_HIDDEN_KEY] || [];
+  } catch {
+    return [];
+  }
+}
+
+async function addHiddenRecentlyClosedKeys(keys) {
+  if (!keys.length) return;
+  const hidden = await getHiddenRecentlyClosedKeys();
+  const merged = [...new Set([...hidden, ...keys])];
+  await chrome.storage.local.set({ [RECENTLY_CLOSED_HIDDEN_KEY]: merged });
+}
+
+function filterRecentlyClosedTabs(tabs, hiddenKeys) {
+  const hidden = new Set(hiddenKeys);
+  return tabs.filter(tab => !hidden.has(recentlyClosedSessionKey(tab)));
+}
+
+function resetRecentClearConfirm() {
+  clearTimeout(recentClearConfirmTimer);
+  const btn = document.getElementById('recentlyClosedClearBtn');
+  if (!btn) return;
+  delete btn.dataset.confirmPending;
+  btn.classList.remove('panel-clear-btn-confirm');
+  const label = btn.querySelector('.panel-clear-btn-label');
+  if (label) label.textContent = t('recent.clearLabel');
+  btn.title = t('recent.clearAll');
+  btn.setAttribute('aria-label', t('recent.clearAll'));
+}
+
+function armRecentClearConfirm(btn) {
+  resetRecentClearConfirm();
+  btn.dataset.confirmPending = 'true';
+  btn.classList.add('panel-clear-btn-confirm');
+  const label = btn.querySelector('.panel-clear-btn-label');
+  if (label) label.textContent = t('recent.confirmClear');
+  btn.title = t('recent.confirmClear');
+  btn.setAttribute('aria-label', t('recent.confirmClear'));
+  clearTimeout(recentClearConfirmTimer);
+  recentClearConfirmTimer = setTimeout(resetRecentClearConfirm, 4000);
+}
+
+function updateRecentlyClosedClearButton(hasItems) {
+  const btn = document.getElementById('recentlyClosedClearBtn');
+  if (!btn) return;
+  btn.classList.toggle('is-visible', hasItems);
+  btn.setAttribute('aria-hidden', hasItems ? 'false' : 'true');
+  if (!hasItems) {
+    resetRecentClearConfirm();
+  } else if (!btn.dataset.confirmPending) {
+    const label = btn.querySelector('.panel-clear-btn-label');
+    if (label) label.textContent = t('recent.clearLabel');
+    btn.title = t('recent.clearAll');
+    btn.setAttribute('aria-label', t('recent.clearAll'));
+  }
+}
+
+async function clearAllRecentlyClosed() {
+  const sessions = await chrome.sessions.getRecentlyClosed({ maxResults: RECENTLY_CLOSED_FETCH_MAX });
+  const tabs = sessions
+    .filter(s => s.tab)
+    .map(s => ({
+      ...s.tab,
+      sessionId: s.sessionId || s.tab.sessionId || '',
+    }))
+    .filter(t => t.url && !t.url.startsWith('chrome://') && !t.url.startsWith('chrome-extension://'));
+
+  await addHiddenRecentlyClosedKeys(tabs.map(recentlyClosedSessionKey));
+  resetRecentClearConfirm();
+  await renderRecentlyClosed();
+  showToast(t('toast.recentCleared'));
+}
+
 async function renderRecentlyClosed() {
   const list = document.getElementById('recentlyClosedList');
   if (!list) return;
 
   try {
-    const sessions = await chrome.sessions.getRecentlyClosed({ maxResults: 8 });
-    const tabs = sessions
-      .filter(s => s.tab)
-      .map(s => s.tab)
-      .filter(t => t.url && !t.url.startsWith('chrome://') && !t.url.startsWith('chrome-extension://'));
+    const hiddenKeys = await getHiddenRecentlyClosedKeys();
+    const sessions = await chrome.sessions.getRecentlyClosed({ maxResults: RECENTLY_CLOSED_FETCH_MAX });
+    const tabs = filterRecentlyClosedTabs(
+      sessions
+        .filter(s => s.tab)
+        .map(s => ({
+          ...s.tab,
+          sessionId: s.sessionId || s.tab.sessionId || '',
+        }))
+        .filter(t => t.url && !t.url.startsWith('chrome://') && !t.url.startsWith('chrome-extension://')),
+      hiddenKeys
+    ).slice(0, 8);
+
+    updateRecentlyClosedClearButton(tabs.length > 0);
 
     if (tabs.length === 0) {
-      list.innerHTML = '<div class="recently-closed-empty">No recently closed tabs</div>';
+      list.innerHTML = `<div class="recently-closed-empty">${t('recent.empty')}</div>`;
       return;
     }
 
@@ -40,32 +134,64 @@ async function renderRecentlyClosed() {
       return `<div class="recently-closed-item" data-action="restore-tab" data-session-id="${sessionId}" data-tab-url="${safeUrl}" title="${safeTitle}">
         ${faviconUrl ? `<img src="${faviconUrl}" alt="">` : ''}
         <span class="recently-closed-title">${displayTitle}</span>
-        <button class="recently-closed-restore" data-action="restore-tab" data-session-id="${sessionId}" title="Restore">
+        <button type="button" class="recently-closed-restore" data-action="restore-tab" data-session-id="${sessionId}" data-tab-url="${safeUrl}" title="${t('recent.restore')}">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" /></svg>
         </button>
       </div>`;
     }).join('');
   } catch {
-    list.innerHTML = '<div class="recently-closed-empty">Unable to load</div>';
+    updateRecentlyClosedClearButton(false);
+    list.innerHTML = `<div class="recently-closed-empty">${t('recent.unable')}</div>`;
   }
 }
 
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('[data-action="clear-recently-closed"]')) {
+    resetRecentClearConfirm();
+  }
+}, true);
+
 document.addEventListener('click', async (e) => {
+  const clearBtn = e.target.closest('[data-action="clear-recently-closed"]');
+  if (clearBtn) {
+    e.stopPropagation();
+    if (clearBtn.dataset.confirmPending !== 'true') {
+      armRecentClearConfirm(clearBtn);
+      return;
+    }
+    resetRecentClearConfirm();
+    try {
+      await clearAllRecentlyClosed();
+    } catch { /* clear failed */ }
+    return;
+  }
+
   const el = e.target.closest('[data-action="restore-tab"]');
   if (!el) return;
   e.stopPropagation();
+  e.preventDefault();
 
-  const sessionId = el.dataset.sessionId;
-  const tabUrl = el.dataset.tabUrl;
+  const item = el.closest('.recently-closed-item');
+  const sessionId = el.dataset.sessionId || item?.dataset.sessionId || '';
+  const tabUrl = el.dataset.tabUrl || item?.dataset.tabUrl || '';
 
   try {
     if (sessionId) {
       await chrome.sessions.restore(sessionId);
     } else if (tabUrl) {
       await chrome.tabs.create({ url: tabUrl });
+    } else {
+      return;
     }
     await renderRecentlyClosed();
-  } catch { /* restore failed */ }
+  } catch {
+    if (tabUrl) {
+      try {
+        await chrome.tabs.create({ url: tabUrl });
+        await renderRecentlyClosed();
+      } catch { /* restore failed */ }
+    }
+  }
 });
 
 
@@ -115,19 +241,19 @@ function renderTabStats() {
     <div class="tab-stats-grid">
       <div class="tab-stat-box">
         <div class="tab-stat-num">${totalTabs}</div>
-        <div class="tab-stat-label">Tabs</div>
+        <div class="tab-stat-label">${t('stats.tabs')}</div>
       </div>
       <div class="tab-stat-box">
         <div class="tab-stat-num">${totalDomains}</div>
-        <div class="tab-stat-label">Domains</div>
+        <div class="tab-stat-label">${t('stats.domains')}</div>
       </div>
       <div class="tab-stat-box">
         <div class="tab-stat-num">${dupeCount}</div>
-        <div class="tab-stat-label">Dupes</div>
+        <div class="tab-stat-label">${t('stats.dupes')}</div>
       </div>
       <div class="tab-stat-box">
-        <div class="tab-stat-num">${openTabs.length}</div>
-        <div class="tab-stat-label">Total</div>
+        <div class="tab-stat-num">${getRealTabCount()}</div>
+        <div class="tab-stat-label">${t('stats.total')}</div>
       </div>
     </div>
     ${topDomains.length > 0 ? '<div class="tab-stats-top-domains">' + topDomainsHtml + '</div>' : ''}
@@ -160,13 +286,13 @@ function renderFocusTimer() {
     </div>
     <div class="focus-timer-display">
       <div class="focus-timer-time">${mm}:${ss}</div>
-      <div class="focus-timer-label">${focusRunning ? 'Focusing...' : (focusTimeLeft < FOCUS_DURATION ? 'Paused' : '25 min session')}</div>
+      <div class="focus-timer-label">${focusRunning ? t('focus.focusing') : (focusTimeLeft < FOCUS_DURATION ? t('focus.paused') : t('focus.session'))}</div>
     </div>
     <div class="focus-timer-controls">
       <button class="focus-timer-btn primary" data-action="focus-timer-toggle">
-        ${focusRunning ? 'Pause' : 'Start'}
+        ${focusRunning ? t('focus.pause') : t('focus.start')}
       </button>
-      <button class="focus-timer-btn" data-action="focus-timer-reset">Reset</button>
+      <button class="focus-timer-btn" data-action="focus-timer-reset">${t('focus.reset')}</button>
     </div>
   `;
 }
@@ -179,7 +305,7 @@ function focusTick() {
     focusTimeLeft = 0;
     renderFocusTimer();
     playFocusComplete();
-    showToast('Focus session complete!');
+    showToast(t('toast.focusComplete'));
     return;
   }
   focusTimeLeft--;
@@ -200,25 +326,25 @@ function updateTimerDisplay() {
     barEl.style.width = `${((FOCUS_DURATION - focusTimeLeft) / FOCUS_DURATION) * 100}%`;
   }
   if (labelEl) {
-    labelEl.textContent = focusRunning ? 'Focusing...' : 'Paused';
+    labelEl.textContent = focusRunning ? t('focus.focusing') : t('focus.paused');
   }
 }
 
 function playFocusComplete() {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const t = ctx.currentTime;
+    const t0 = ctx.currentTime;
     // Two-tone chime
     [523.25, 659.25].forEach((freq, i) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = 'sine';
       osc.frequency.value = freq;
-      gain.gain.setValueAtTime(0.12, t + i * 0.2);
-      gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.2 + 0.6);
+      gain.gain.setValueAtTime(0.12, t0 + i * 0.2);
+      gain.gain.exponentialRampToValueAtTime(0.001, t0 + i * 0.2 + 0.6);
       osc.connect(gain).connect(ctx.destination);
-      osc.start(t + i * 0.2);
-      osc.stop(t + i * 0.2 + 0.6);
+      osc.start(t0 + i * 0.2);
+      osc.stop(t0 + i * 0.2 + 0.6);
     });
     setTimeout(() => ctx.close(), 1500);
   } catch { /* audio unavailable */ }
@@ -269,7 +395,7 @@ async function renderQuickNotes() {
   } catch { /* no saved notes */ }
 
   container.innerHTML = `
-    <textarea class="quick-notes-textarea" id="quickNotesTextarea" placeholder="Jot something down...">${savedText.replace(/</g, '&lt;')}</textarea>
+    <textarea class="quick-notes-textarea" id="quickNotesTextarea" placeholder="${t('notes.placeholder')}">${savedText.replace(/</g, '&lt;')}</textarea>
     <div class="quick-notes-status" id="quickNotesStatus"></div>
   `;
 }
@@ -284,7 +410,7 @@ document.addEventListener('input', (e) => {
     try {
       await chrome.storage.local.set({ [NOTES_STORAGE_KEY]: e.target.value });
       if (status) {
-        status.textContent = 'Saved';
+        status.textContent = t('notes.saved');
         setTimeout(() => { if (status) status.textContent = ''; }, 1500);
       }
     } catch { /* save failed */ }
@@ -299,6 +425,7 @@ document.addEventListener('input', (e) => {
 
 async function renderPanels() {
   await renderRecentlyClosed();
+  await renderTabSnapshots();
   renderTabStats();
   renderFocusTimer();
   await renderQuickNotes();

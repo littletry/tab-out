@@ -159,6 +159,37 @@ function showToast(message) {
 }
 
 /**
+ * getOpenTabsEmptyStateHtml()
+ *
+ * HTML for the center column when there are no open web tabs.
+ */
+function getOpenTabsEmptyStateHtml() {
+  return `
+    <div class="missions-empty-state">
+      <div class="empty-checkmark">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+        </svg>
+      </div>
+      <div class="empty-title">${t('empty.title')}</div>
+      <div class="empty-subtitle">${t('empty.subtitle')}</div>
+    </div>`;
+}
+
+/**
+ * renderOpenTabsEmptyState()
+ *
+ * Paints the empty center column and resets the section count.
+ */
+function renderOpenTabsEmptyState() {
+  const missionsEl = document.getElementById('openTabsMissions');
+  const countEl    = document.getElementById('openTabsSectionCount');
+  if (missionsEl) missionsEl.innerHTML = getOpenTabsEmptyStateHtml();
+  if (countEl) countEl.textContent = t('empty.domainCount');
+  if (typeof updateOpenTabsToolbar === 'function') updateOpenTabsToolbar(false);
+}
+
+/**
  * checkAndShowEmptyState()
  *
  * Shows a cheerful "Inbox zero" message when all domain cards are gone.
@@ -170,20 +201,7 @@ function checkAndShowEmptyState() {
   const remaining = missionsEl.querySelectorAll('.mission-card:not(.closing)').length;
   if (remaining > 0) return;
 
-  missionsEl.innerHTML = `
-    <div class="missions-empty-state">
-      <div class="empty-checkmark">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-        </svg>
-      </div>
-      <div class="empty-title">Inbox zero, but for tabs.</div>
-      <div class="empty-subtitle">You're free.</div>
-    </div>
-  `;
-
-  const countEl = document.getElementById('openTabsSectionCount');
-  if (countEl) countEl.textContent = '0 domains';
+  renderOpenTabsEmptyState();
 }
 
 /**
@@ -200,11 +218,11 @@ function timeAgo(dateStr) {
   const diffHours = Math.floor((now - then) / 3600000);
   const diffDays  = Math.floor((now - then) / 86400000);
 
-  if (diffMins < 1)   return 'just now';
-  if (diffMins < 60)  return diffMins + ' min ago';
-  if (diffHours < 24) return diffHours + ' hr' + (diffHours !== 1 ? 's' : '') + ' ago';
-  if (diffDays === 1) return 'yesterday';
-  return diffDays + ' days ago';
+  if (diffMins < 1)   return t('time.justNow');
+  if (diffMins < 60)  return t('time.minAgo', { count: diffMins });
+  if (diffHours < 24) return tp('time.hrsAgo', diffHours);
+  if (diffDays === 1) return t('time.yesterday');
+  return t('time.daysAgo', { count: diffDays });
 }
 
 /**
@@ -212,16 +230,17 @@ function timeAgo(dateStr) {
  */
 function getGreeting() {
   const hour = new Date().getHours();
-  if (hour < 12) return 'Good morning';
-  if (hour < 17) return 'Good afternoon';
-  return 'Good evening';
+  if (hour < 12) return t('greeting.morning');
+  if (hour < 17) return t('greeting.afternoon');
+  return t('greeting.evening');
 }
 
 /**
  * getDateDisplay() — "Friday, April 4, 2026"
  */
 function getDateDisplay() {
-  return new Date().toLocaleDateString('en-US', {
+  const locale = getCurrentLang() === 'zh' ? 'zh-CN' : 'en-US';
+  return new Date().toLocaleDateString(locale, {
     weekday: 'long',
     year:    'numeric',
     month:   'long',
